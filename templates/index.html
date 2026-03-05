@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Forecast - Stunning Weather App</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .glass-morphism {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .weather-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .sunny-gradient {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .cloudy-gradient {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .rainy-gradient {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        .night-gradient {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .pulsing {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .weather-card {
+            transition: all 0.3s ease;
+        }
+        
+        .weather-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen weather-gradient">
+    <!-- Navigation -->
+    <nav class="glass-morphism sticky top-0 z-50 px-6 py-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-cloud-sun text-white text-2xl"></i>
+                <h1 class="text-white text-xl font-bold">Weather Forecast</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="refresh-btn" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button id="settings-btn" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        <!-- Search Section -->
+        <section class="mb-8">
+            <div class="max-w-2xl mx-auto">
+                <div class="glass-morphism rounded-2xl p-6">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex-1 relative">
+                            <input 
+                                type="text" 
+                                id="search-input" 
+                                placeholder="Search for a city..."
+                                class="w-full px-4 py-3 rounded-xl bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none focus:border-white/50"
+                            >
+                            <i class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-white/70"></i>
+                        </div>
+                        <button 
+                            id="search-btn"
+                            class="px-6 py-3 bg-white text-purple-600 rounded-xl font-semibold hover:bg-gray-100 transition"
+                        >
+                            Search
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Loading State -->
+        <div id="loading" class="hidden">
+            <div class="flex justify-center items-center py-20">
+                <div class="text-center">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+                    <p class="text-white mt-4">Loading weather data...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="error" class="hidden">
+            <div class="max-w-md mx-auto">
+                <div class="glass-morphism rounded-2xl p-6 text-center">
+                    <i class="fas fa-exclamation-triangle text-yellow-300 text-4xl mb-4"></i>
+                    <p class="text-white" id="error-message">Something went wrong. Please try again.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weather Display -->
+        <div id="weather-content" class="hidden">
+            <!-- Current Weather -->
+            <section class="mb-8">
+                <div class="max-w-4xl mx-auto">
+                    <div class="glass-morphism rounded-3xl p-8 weather-card">
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <!-- Left Side - Main Weather Info -->
+                            <div class="text-white">
+                                <div class="mb-4">
+                                    <h2 id="city-name" class="text-3xl font-bold mb-2">City Name</h2>
+                                    <p id="current-date" class="text-white/80">Date</p>
+                                </div>
+                                
+                                <div class="flex items-center mb-6">
+                                    <div class="text-6xl mr-4 floating">
+                                        <i id="weather-icon" class="fas fa-sun"></i>
+                                    </div>
+                                    <div>
+                                        <div id="temperature" class="text-5xl font-bold">25°C</div>
+                                        <div id="weather-description" class="text-xl text-white/80">Clear Sky</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="bg-white/10 rounded-xl p-3">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-temperature-high mr-2"></i>
+                                            <span class="text-sm text-white/80">Feels like</span>
+                                        </div>
+                                        <div id="feels-like" class="text-xl font-semibold">23°C</div>
+                                    </div>
+                                    <div class="bg-white/10 rounded-xl p-3">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-tint mr-2"></i>
+                                            <span class="text-sm text-white/80">Humidity</span>
+                                        </div>
+                                        <div id="humidity" class="text-xl font-semibold">65%</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Right Side - Additional Info -->
+                            <div class="text-white space-y-4">
+                                <div class="bg-white/10 rounded-xl p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-wind mr-3"></i>
+                                            <span>Wind Speed</span>
+                                        </div>
+                                        <span id="wind-speed" class="font-semibold">5.2 m/s</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white/10 rounded-xl p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-compress-arrows-alt mr-3"></i>
+                                            <span>Pressure</span>
+                                        </div>
+                                        <span id="pressure" class="font-semibold">1013 hPa</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white/10 rounded-xl p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-eye mr-3"></i>
+                                            <span>Visibility</span>
+                                        </div>
+                                        <span id="visibility" class="font-semibold">10 km</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white/10 rounded-xl p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-smog mr-3"></i>
+                                            <span>Air Quality</span>
+                                        </div>
+                                        <span id="air-quality" class="font-semibold">Good</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5-Day Forecast -->
+            <section class="mb-8">
+                <div class="max-w-6xl mx-auto">
+                    <h3 class="text-2xl font-bold text-white mb-6">5-Day Forecast</h3>
+                    <div id="forecast-container" class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <!-- Forecast cards will be inserted here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Hourly Forecast -->
+            <section>
+                <div class="max-w-6xl mx-auto">
+                    <h3 class="text-2xl font-bold text-white mb-6">Hourly Forecast</h3>
+                    <div id="hourly-container" class="flex space-x-4 overflow-x-auto pb-4">
+                        <!-- Hourly cards will be inserted here -->
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
